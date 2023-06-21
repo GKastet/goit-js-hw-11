@@ -1,0 +1,23 @@
+.css-form{
+    display: flex;
+    justify-content: center;
+    background-color: skyblue;
+    padding: 20px 0;
+    gap: 10px;
+}
+.btn-submit{
+    border-radius: 8px;
+    border-width: 1px;
+    transition: background-color 250ms cubic-bezier(0.075, 0.82, 0.165, 1), scale 250ms;
+}
+
+.btn-submit:hover{
+    background-color: yellow;
+    scale: 1.07;
+}
+
+.load-more{
+    display: flex;
+    margin: 10px auto;
+
+}
