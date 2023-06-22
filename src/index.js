@@ -1,13 +1,14 @@
-console.log(1);
-
 import Notiflix from 'notiflix';
+import SimpleLightbox from "simplelightbox";
+import "simplelightbox/dist/simple-lightbox.min.css"
 import axios from 'axios';
 
-const BASE_URL = `https://pixabay.com/api/`;//search images
-const API_KEY = `?key=37603815-98520903b63fc1ffa2ecf35bf`;//pixabay
-const END_image_type = `&image_type=photo`;//photo
-const END_orientation = `&orientation=horizontal`;//horizontal
-const END_safesearch = `&safesearch=true`;//true
+
+const BASE_URL = `https://pixabay.com/api/`;
+const API_KEY = `?key=37603815-98520903b63fc1ffa2ecf35bf`;
+const END_image_type = `&image_type=photo`;
+const END_orientation = `&orientation=horizontal`;
+const END_safesearch = `&safesearch=true`;
 
 const refs = {
     form: document.querySelector('.search-form'),
@@ -17,13 +18,9 @@ const refs = {
     btnLoadmore: document.querySelector('.load-more')
 }
 
-refs.btnLoadmore.hidden = true;
-//refs.btnLoadmore.setAttribute('hidden', '');
-
 let page = 1;
 const per_page = 40;
 let hitsSum = 0;
-console.log(hitsSum);
 
 refs.form.addEventListener('submit', handlerOnFormSubmit);
 refs.btnLoadmore.addEventListener('click', handlerOnLoadmore);
@@ -35,19 +32,22 @@ async function handlerOnFormSubmit(evt){
         localStorage.setItem('key', localValue)
 
         const results = await galleryDemand(page, per_page);
+        console.log(results.totalHits);
+        if(results.totalHits >= per_page){                    
+            refs.btnLoadmore.classList.remove('hide') 
+        }
         const arrResults = await results.hits;
-        //console.log(results);
-        //console.log(arrResults);
+        
         if(arrResults.length === 0){
             Notiflix.Report.failure('Wow!', 'Sorry, there are no images matching your search query. Please try again.');    
-        }        
+        }
+        Notiflix.Notify.success(`'Hooray! We found ${results.totalHits} images.'`);
         const markUp = createMarkup(arrResults);        
         refs.gallery.innerHTML = markUp;
+        lightbox.refresh()
         page = 1;
         hitsSum +=per_page;
-        console.log(hitsSum); 
-        refs.btnLoadmore.hidden = false;
-        //refs.btnLoadmore.removeAttribute('hidden')
+                
         refs.form.reset();
     } catch (error) {
         Notiflix.Notify.failure('Sorry, server is overloaded. Please try later.');
@@ -57,18 +57,24 @@ async function handlerOnFormSubmit(evt){
 
 async function handlerOnLoadmore(){
     page +=1;    
-    const nextPage = await galleryDemand(page, per_page);
-    //console.log(nextPage.totalHits);   
+    const nextPage = await galleryDemand(page, per_page);    
     if(hitsSum >= nextPage.totalHits - per_page){
         console.log('STOP!!!');
-        Notiflix.Report.failure('Wow!', `We're sorry, but you've reached the end of search results.`);
-        refs.btnLoadmore.hidden = true;        
+        Notiflix.Notify.failure('Wow!', `We're sorry, but you've reached the end of search results.`);
+        refs.btnLoadmore.classList.add('hide');        
     }  
     const arrNextPage = await nextPage.hits;     
     const nextMarkup = createMarkup(arrNextPage);
     refs.gallery.insertAdjacentHTML('beforeend', nextMarkup);
+    lightbox.refresh()
     hitsSum +=per_page;
-    console.log(hitsSum);
+    const { height: cardHeight } = document.querySelector(".gallery")
+    .firstElementChild.getBoundingClientRect();
+
+window.scrollBy({
+  top: cardHeight * 1,
+  behavior: "smooth",
+});
 }
 
 function galleryDemand(page = 1, per_page){
@@ -77,40 +83,44 @@ function galleryDemand(page = 1, per_page){
     const querySmall = readyLocalValue.toLowerCase();
     const END_q = `&q=${querySmall}`;
     const URL = BASE_URL + API_KEY + END_q + END_image_type + END_orientation + END_safesearch + `&page=${page}` + `&per_page=${per_page}`;    
-    //console.log(URL);
-    return fetch(URL).then((responce)=>{
-        if(!responce.ok){
+    return axios.get(URL).then((responce)=>{        
+        if(!responce.status === 200){
             throw new Error();
         }
-        return responce.json();
-    })        
-    // const response = await fetch(URL);
-    // const apiJson = await response.json()
-    // const arrApi = apiJson.hits;
-    // return arrApi
+        return responce.data;
+    })    
 }
 
 
 function createMarkup(arr){
     return arr.map(({webformatURL, largeImageURL, likes, views, comments, downloads, tags})=>{
-        return `<div class="photo-card">
-                    <a href="${largeImageURL}">
+        return `
+                    <a href="${largeImageURL}" class="link">
+                        <div class="img-container">
                         <img src="${webformatURL}" alt="${tags}" loading="lazy" />
-                    </a>
+                        </div>
                         <div class="info">
                             <p class="info-item">
-                                <b>Likes ${likes}</b>
+                                <b>Likes</b><span>${likes}</span>
                             </p>
                             <p class="info-item">
-                                <b>Views ${views}</b>
+                                <b>Views</b><span>${views}</span>
                             </p>
                             <p class="info-item">
-                                <b>Comments ${comments}</b>
+                                <b>Comments</b><span>${comments}</span>
                             </p>
                             <p class="info-item">
-                                <b>Downloads ${downloads}</b>
+                                <b>Downloads</b><span>${downloads}</span>
                             </p>
                         </div>
-                </div>`
-    }).join('');    
+                    </a>`
+    }).join('');
+        
 }
+
+const lightbox = new SimpleLightbox('.gallery a', {
+    navText: ['<','>'],
+    captionsData: 'alt',
+    captionPosition: 'bottom',
+    captionDelay: 250,
+});
