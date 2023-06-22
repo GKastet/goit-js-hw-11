@@ -60,7 +60,7 @@ async function handlerOnLoadmore(){
     const nextPage = await galleryDemand(page, per_page);    
     if(hitsSum >= nextPage.totalHits - per_page){
         console.log('STOP!!!');
-        Notiflix.Notify.failure('Wow!', `We're sorry, but you've reached the end of search results.`);
+        Notiflix.Notify.failure(`We're sorry, but you've reached the end of search results.`);
         refs.btnLoadmore.classList.add('hide');        
     }  
     const arrNextPage = await nextPage.hits;     
