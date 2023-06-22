@@ -31,6 +31,7 @@ async function handlerOnFormSubmit(evt){
         const localValue = JSON.stringify(refs.input.value);
         localStorage.setItem('key', localValue)
 
+        page = 1;
         const results = await galleryDemand(page, per_page);
         console.log(results.totalHits);
         if(results.totalHits >= per_page){                    
@@ -45,7 +46,6 @@ async function handlerOnFormSubmit(evt){
         const markUp = createMarkup(arrResults);        
         refs.gallery.innerHTML = markUp;
         lightbox.refresh()
-        page = 1;
         hitsSum +=per_page;
                 
         refs.form.reset();
@@ -83,6 +83,7 @@ function galleryDemand(page = 1, per_page){
     const querySmall = readyLocalValue.toLowerCase();
     const END_q = `&q=${querySmall}`;
     const URL = BASE_URL + API_KEY + END_q + END_image_type + END_orientation + END_safesearch + `&page=${page}` + `&per_page=${per_page}`;    
+    console.log(URL);
     return axios.get(URL).then((responce)=>{        
         if(!responce.status === 200){
             throw new Error();
